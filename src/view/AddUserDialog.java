@@ -10,38 +10,54 @@ public class AddUserDialog extends JDialog {
     public AddUserDialog(JFrame parent, UserController userController) {
         super(parent, "Add User", true);
 
-        JPanel panel = new JPanel(new GridLayout(4, 2, 10, 10));
+        setLayout(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(10, 10, 10, 10);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1;
 
-        JTextField nameField = new JTextField();
-        JTextField emailField = new JTextField();
-        JTextField roleField = new JTextField();
+        // Fields
+        JTextField nameField = new JTextField(20);
+        JTextField emailField = new JTextField(20);
+        JTextField roleField = new JTextField(20);
 
-        panel.add(new JLabel("Name:"));
-        panel.add(nameField);
-        panel.add(new JLabel("Email:"));
-        panel.add(emailField);
-        panel.add(new JLabel("Role:"));
-        panel.add(roleField);
+        // Labels
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        add(new JLabel("Name:"), gbc);
+        gbc.gridy++;
+        add(new JLabel("Email:"), gbc);
+        gbc.gridy++;
+        add(new JLabel("Role:"), gbc);
 
+        // Fields
+        gbc.gridx = 1;
+        gbc.gridy = 0;
+        add(nameField, gbc);
+        gbc.gridy++;
+        add(emailField, gbc);
+        gbc.gridy++;
+        add(roleField, gbc);
+
+        // Tooltips
+        nameField.setToolTipText("Enter the full name of the user.");
+        emailField.setToolTipText("Enter a valid email address.");
+        roleField.setToolTipText("Enter the user's role (e.g., Member, Librarian, Admin).");
+
+        // Add and Cancel Buttons
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton addButton = new JButton("Add");
-        addButton.addActionListener(e -> {
-            String name = nameField.getText();
-            String email = emailField.getText();
-            String role = roleField.getText();
+        JButton cancelButton = new JButton("Cancel");
 
-            userController.addUser(new User(userController.getUsers().size() + 1, name, email, role));
-            JOptionPane.showMessageDialog(this, "User added successfully!");
-            dispose();
-        });
+        buttonPanel.add(addButton);
+        buttonPanel.add(cancelButton);
 
-        panel.add(new JLabel());
-        panel.add(addButton);
+        gbc.gridx = 0;
+        gbc.gridy++;
+        gbc.gridwidth = 2;
+        add(buttonPanel, gbc);
 
-        add(panel);
-        setSize(400, 250);
-        setLocationRelativeTo(parent);
-        setVisible(true);
-
+        // Action Listeners
         addButton.addActionListener(e -> {
             String name = nameField.getText().trim();
             String email = emailField.getText().trim();
@@ -62,6 +78,10 @@ public class AddUserDialog extends JDialog {
             dispose();
         });
 
+        cancelButton.addActionListener(e -> dispose());
 
+        pack();
+        setLocationRelativeTo(parent);
+        setVisible(true);
     }
 }

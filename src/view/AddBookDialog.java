@@ -4,48 +4,69 @@ import controller.BookController;
 import model.Book;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.awt.*;
 
 public class AddBookDialog extends JDialog {
     public AddBookDialog(JFrame parent, BookController bookController) {
         super(parent, "Add Book", true);
 
-        JPanel panel = new JPanel(new GridLayout(5, 2, 10, 10));
+        // Use GridBagLayout for flexibility
+        setLayout(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(10, 10, 10, 10); // Add padding
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1;
 
-        JTextField titleField = new JTextField();
-        JTextField authorField = new JTextField();
-        JTextField genreField = new JTextField();
-        JTextField yearField = new JTextField();
+        // Fields
+        JTextField titleField = new JTextField(20);
+        JTextField authorField = new JTextField(20);
+        JTextField genreField = new JTextField(20);
+        JTextField yearField = new JTextField(20);
 
-        panel.add(new JLabel("Title:"));
-        panel.add(titleField);
-        panel.add(new JLabel("Author:"));
-        panel.add(authorField);
-        panel.add(new JLabel("Genre:"));
-        panel.add(genreField);
-        panel.add(new JLabel("Year:"));
-        panel.add(yearField);
+        // Labels
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        add(new JLabel("Title:"), gbc);
+        gbc.gridy++;
+        add(new JLabel("Author:"), gbc);
+        gbc.gridy++;
+        add(new JLabel("Genre:"), gbc);
+        gbc.gridy++;
+        add(new JLabel("Year:"), gbc);
 
+        // Fields
+        gbc.gridx = 1;
+        gbc.gridy = 0;
+        add(titleField, gbc);
+        gbc.gridy++;
+        add(authorField, gbc);
+        gbc.gridy++;
+        add(genreField, gbc);
+        gbc.gridy++;
+        add(yearField, gbc);
+
+        // Tooltips
+        titleField.setToolTipText("Enter the title of the book.");
+        authorField.setToolTipText("Enter the author's name.");
+        genreField.setToolTipText("Enter the genre (e.g., Fiction, Non-Fiction).");
+        yearField.setToolTipText("Enter the year of publication.");
+
+        // Add and Cancel Buttons
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton addButton = new JButton("Add");
-        addButton.addActionListener(e -> {
-            String title = titleField.getText();
-            String author = authorField.getText();
-            String genre = genreField.getText();
-            int year = Integer.parseInt(yearField.getText());
+        JButton cancelButton = new JButton("Cancel");
 
-            bookController.addBook(new Book(bookController.getBooks().size() + 1, title, author, genre, year));
-            JOptionPane.showMessageDialog(this, "Book added successfully!");
-            dispose();
-        });
+        buttonPanel.add(addButton);
+        buttonPanel.add(cancelButton);
 
-        panel.add(new JLabel());
-        panel.add(addButton);
+        gbc.gridx = 0;
+        gbc.gridy++;
+        gbc.gridwidth = 2;
+        add(buttonPanel, gbc);
 
-        add(panel);
-        setSize(400, 300);
-        setLocationRelativeTo(parent);
-        setVisible(true);
-
+        // Action Listeners
         addButton.addActionListener(e -> {
             String title = titleField.getText().trim();
             String author = authorField.getText().trim();
@@ -59,6 +80,7 @@ public class AddBookDialog extends JDialog {
 
             try {
                 int year = Integer.parseInt(yearText);
+
                 bookController.addBook(new Book(bookController.getBooks().size() + 1, title, author, genre, year));
                 JOptionPane.showMessageDialog(this, "Book added successfully!");
                 dispose();
@@ -67,5 +89,38 @@ public class AddBookDialog extends JDialog {
             }
         });
 
+        cancelButton.addActionListener(e -> dispose());
+
+        yearField.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                validateYear();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                validateYear();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                validateYear();
+            }
+
+            private void validateYear() {
+                try {
+                    Integer.parseInt(yearField.getText());
+                    yearField.setBackground(Color.WHITE);
+                } catch (NumberFormatException ex) {
+                    yearField.setBackground(Color.PINK);
+                }
+            }
+        });
+
+
+        // Dialog settings
+        pack();
+        setLocationRelativeTo(parent);
+        setVisible(true);
     }
 }

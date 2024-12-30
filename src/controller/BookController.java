@@ -43,16 +43,12 @@ public class BookController {
         }, () -> {
             System.out.printf("Book with ID %s not found.\n", paramBook.getId());
         });
+        saveBooksToFile();
     }
 
     public void deleteBook(int id) {
         this.books.removeIf(book -> book.getId() == id);
+        saveBooksToFile();
         System.out.printf("Book deleted: %s.\n", id);
-    }
-
-    //    public List<Book> listBooks() {
-    public void listBooks() {
-        if (this.books.isEmpty()) System.out.println("No books found");
-        else this.books.forEach(System.out::println);
     }
 }

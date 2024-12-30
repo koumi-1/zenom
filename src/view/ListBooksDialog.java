@@ -8,28 +8,56 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 
 public class ListBooksDialog extends JDialog {
+    private final DefaultTableModel tableModel;
+    private final JTable table;
+
     public ListBooksDialog(JFrame parent, BookController bookController) {
-        super(parent, "List Books", true);
+        super(parent, "Manage Books", true);
 
+        setLayout(new BorderLayout());
+
+        // Table Setup
         String[] columnNames = {"ID", "Title", "Author", "Genre", "Year"};
-        DefaultTableModel tableModel = new DefaultTableModel(columnNames, 0);
-        JTable table = new JTable(tableModel);
+        tableModel = new DefaultTableModel(columnNames, 0);
+        table = new JTable(tableModel);
+        table.setRowHeight(25);
+        refreshTable(bookController);
 
-        for (Book book : bookController.getBooks()) {
-            tableModel.addRow(new Object[]{book.getId(), book.getTitle(), book.getAuthor(), book.getGenre(), book.getYear()});
-        }
+        add(new JScrollPane(table), BorderLayout.CENTER);
 
-        JScrollPane scrollPane = new JScrollPane(table);
-        add(scrollPane, BorderLayout.CENTER);
+        // Buttons
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JButton addButton = new JButton("Add Book");
+        JButton editButton = new JButton("Edit Book");
+        JButton deleteButton = new JButton("Delete Book");
 
-        JPanel buttonPanel = new JPanel();
-        JButton editButton = new JButton("Edit");
-        JButton deleteButton = new JButton("Delete");
+        buttonPanel.add(addButton);
         buttonPanel.add(editButton);
         buttonPanel.add(deleteButton);
         add(buttonPanel, BorderLayout.SOUTH);
 
-        // Edit Button Action Listener
+        // Add Book Action
+        addButton.addActionListener(e -> {
+            BookFormPanel bookForm = new BookFormPanel();
+            int result = JOptionPane.showConfirmDialog(this, bookForm, "Add Book", JOptionPane.OK_CANCEL_OPTION);
+
+            if (result == JOptionPane.OK_OPTION) {
+                try {
+                    String title = bookForm.getTitle();
+                    String author = bookForm.getAuthor();
+                    String genre = bookForm.getGenre();
+                    int year = Integer.parseInt(bookForm.getYear());
+
+                    Book newBook = new Book(bookController.getBooks().size() + 1, title, author, genre, year);
+                    bookController.addBook(newBook);
+                    refreshTable(bookController);
+                } catch (NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(this, "Year must be a valid number!", "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        });
+
+        // Edit Book Action
         editButton.addActionListener(e -> {
             int selectedRow = table.getSelectedRow();
             if (selectedRow >= 0) {
@@ -40,28 +68,26 @@ public class ListBooksDialog extends JDialog {
                         .orElse(null);
 
                 if (book != null) {
-                    String newTitle = JOptionPane.showInputDialog(this, "Edit Title", book.getTitle());
-                    String newAuthor = JOptionPane.showInputDialog(this, "Edit Author", book.getAuthor());
-                    String newGenre = JOptionPane.showInputDialog(this, "Edit Genre", book.getGenre());
-                    String newYearStr = JOptionPane.showInputDialog(this, "Edit Year", book.getYear());
+                    BookFormPanel bookForm = new BookFormPanel();
+                    bookForm.setTitle(book.getTitle());
+                    bookForm.setAuthor(book.getAuthor());
+                    bookForm.setGenre(book.getGenre());
+                    bookForm.setYear(String.valueOf(book.getYear()));
 
-                    try {
-                        int newYear = Integer.parseInt(newYearStr);
+                    int result = JOptionPane.showConfirmDialog(this, bookForm, "Edit Book", JOptionPane.OK_CANCEL_OPTION);
 
-                        book.setTitle(newTitle);
-                        book.setAuthor(newAuthor);
-                        book.setGenre(newGenre);
-                        book.setYear(newYear);
+                    if (result == JOptionPane.OK_OPTION) {
+                        try {
+                            book.setTitle(bookForm.getTitle());
+                            book.setAuthor(bookForm.getAuthor());
+                            book.setGenre(bookForm.getGenre());
+                            book.setYear(Integer.parseInt(bookForm.getYear()));
 
-                        bookController.addBook(book); // Update controller and file
-                        tableModel.setValueAt(newTitle, selectedRow, 1);
-                        tableModel.setValueAt(newAuthor, selectedRow, 2);
-                        tableModel.setValueAt(newGenre, selectedRow, 3);
-                        tableModel.setValueAt(newYear, selectedRow, 4);
-
-                        JOptionPane.showMessageDialog(this, "Book updated successfully!");
-                    } catch (NumberFormatException ex) {
-                        JOptionPane.showMessageDialog(this, "Invalid year format!", "Error", JOptionPane.ERROR_MESSAGE);
+                            refreshTable(bookController);
+                            JOptionPane.showMessageDialog(this, "Book updated successfully!");
+                        } catch (NumberFormatException ex) {
+                            JOptionPane.showMessageDialog(this, "Year must be a valid number!", "Error", JOptionPane.ERROR_MESSAGE);
+                        }
                     }
                 }
             } else {
@@ -69,23 +95,34 @@ public class ListBooksDialog extends JDialog {
             }
         });
 
-        // Delete Button Action Listener
+        // Delete Book Action
         deleteButton.addActionListener(e -> {
             int selectedRow = table.getSelectedRow();
             if (selectedRow >= 0) {
                 int bookId = (int) tableModel.getValueAt(selectedRow, 0);
-
-                bookController.deleteBook(bookId); // Remove from controller and file
-                tableModel.removeRow(selectedRow);
-
+                bookController.deleteBook(bookId);
+                refreshTable(bookController);
                 JOptionPane.showMessageDialog(this, "Book deleted successfully!");
             } else {
                 JOptionPane.showMessageDialog(this, "Please select a book to delete.", "Error", JOptionPane.ERROR_MESSAGE);
             }
         });
 
-        setSize(600, 400);
+        setSize(700, 500);
         setLocationRelativeTo(parent);
         setVisible(true);
+    }
+
+    private void refreshTable(BookController bookController) {
+        tableModel.setRowCount(0);  // Clear the table
+        for (Book book : bookController.getBooks()) {
+            tableModel.addRow(new Object[]{
+                    book.getId(),
+                    book.getTitle(),
+                    book.getAuthor(),
+                    book.getGenre(),
+                    book.getYear()
+            });
+        }
     }
 }

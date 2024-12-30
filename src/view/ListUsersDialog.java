@@ -8,28 +8,56 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 
 public class ListUsersDialog extends JDialog {
+    private final DefaultTableModel tableModel;
+    private final JTable table;
+
     public ListUsersDialog(JFrame parent, UserController userController) {
-        super(parent, "List Users", true);
+        super(parent, "Manage Users", true);
 
+        setLayout(new BorderLayout());
+
+        // Table Setup
         String[] columnNames = {"ID", "Name", "Email", "Role"};
-        DefaultTableModel tableModel = new DefaultTableModel(columnNames, 0);
-        JTable table = new JTable(tableModel);
+        tableModel = new DefaultTableModel(columnNames, 0);
+        table = new JTable(tableModel);
+        table.setRowHeight(25);
+        refreshTable(userController);
 
-        for (User user : userController.getUsers()) {
-            tableModel.addRow(new Object[]{user.getId(), user.getName(), user.getEmail(), user.getRole()});
-        }
+        add(new JScrollPane(table), BorderLayout.CENTER);
 
-        JScrollPane scrollPane = new JScrollPane(table);
-        add(scrollPane, BorderLayout.CENTER);
+        // Buttons
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JButton addButton = new JButton("Add User");
+        JButton editButton = new JButton("Edit User");
+        JButton deleteButton = new JButton("Delete User");
 
-        JPanel buttonPanel = new JPanel();
-        JButton editButton = new JButton("Edit");
-        JButton deleteButton = new JButton("Delete");
+        buttonPanel.add(addButton);
         buttonPanel.add(editButton);
         buttonPanel.add(deleteButton);
         add(buttonPanel, BorderLayout.SOUTH);
 
-        // Edit Button Action Listener
+        // Add User Action
+        addButton.addActionListener(e -> {
+            UserFormPanel userForm = new UserFormPanel();
+            int result = JOptionPane.showConfirmDialog(this, userForm, "Add User", JOptionPane.OK_CANCEL_OPTION);
+
+            if (result == JOptionPane.OK_OPTION) {
+                String name = userForm.getName();
+                String email = userForm.getEmail();
+                String role = userForm.getRole();
+
+                if (!name.isEmpty() && !email.isEmpty() && !role.isEmpty()) {
+                    User newUser = new User(userController.getUsers().size() + 1, name, email, role);
+                    userController.addUser(newUser);
+                    refreshTable(userController);
+                    JOptionPane.showMessageDialog(this, "User added successfully!");
+                } else {
+                    JOptionPane.showMessageDialog(this, "All fields are required!", "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        });
+
+        // Edit User Action
         editButton.addActionListener(e -> {
             int selectedRow = table.getSelectedRow();
             if (selectedRow >= 0) {
@@ -40,43 +68,53 @@ public class ListUsersDialog extends JDialog {
                         .orElse(null);
 
                 if (user != null) {
-                    String newName = JOptionPane.showInputDialog(this, "Edit Name", user.getName());
-                    String newEmail = JOptionPane.showInputDialog(this, "Edit Email", user.getEmail());
-                    String newRole = JOptionPane.showInputDialog(this, "Edit Role", user.getRole());
+                    UserFormPanel userForm = new UserFormPanel();
+                    userForm.setName(user.getName());
+                    userForm.setEmail(user.getEmail());
+                    userForm.setRole(user.getRole());
 
-                    user.setName(newName);
-                    user.setEmail(newEmail);
-                    user.setRole(newRole);
+                    int result = JOptionPane.showConfirmDialog(this, userForm, "Edit User", JOptionPane.OK_CANCEL_OPTION);
 
-                    userController.addUser(user); // Update controller and file
-                    tableModel.setValueAt(newName, selectedRow, 1);
-                    tableModel.setValueAt(newEmail, selectedRow, 2);
-                    tableModel.setValueAt(newRole, selectedRow, 3);
-
-                    JOptionPane.showMessageDialog(this, "User updated successfully!");
+                    if (result == JOptionPane.OK_OPTION) {
+                        user.setName(userForm.getName());
+                        user.setEmail(userForm.getEmail());
+                        user.setRole(userForm.getRole());
+                        refreshTable(userController);
+                        JOptionPane.showMessageDialog(this, "User updated successfully!");
+                    }
                 }
             } else {
                 JOptionPane.showMessageDialog(this, "Please select a user to edit.", "Error", JOptionPane.ERROR_MESSAGE);
             }
         });
 
-        // Delete Button Action Listener
+        // Delete User Action
         deleteButton.addActionListener(e -> {
             int selectedRow = table.getSelectedRow();
             if (selectedRow >= 0) {
                 int userId = (int) tableModel.getValueAt(selectedRow, 0);
-
-                userController.deleteUser(userId); // Remove from controller and file
-                tableModel.removeRow(selectedRow);
-
+                userController.deleteUser(userId);
+                refreshTable(userController);
                 JOptionPane.showMessageDialog(this, "User deleted successfully!");
             } else {
                 JOptionPane.showMessageDialog(this, "Please select a user to delete.", "Error", JOptionPane.ERROR_MESSAGE);
             }
         });
 
-        setSize(600, 400);
+        setSize(700, 500);
         setLocationRelativeTo(parent);
         setVisible(true);
+    }
+
+    private void refreshTable(UserController userController) {
+        tableModel.setRowCount(0);  // Clear the table
+        for (User user : userController.getUsers()) {
+            tableModel.addRow(new Object[]{
+                    user.getId(),
+                    user.getName(),
+                    user.getEmail(),
+                    user.getRole()
+            });
+        }
     }
 }

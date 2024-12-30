@@ -41,14 +41,12 @@ public class UserController {
         }, () -> {
             System.out.printf("User with ID %s not found.\n", paramUser.getId());
         });
+        this.saveUsersToFile();
     }
 
     public void deleteUser(int id) {
         this.users.removeIf(user -> user.getId() == id);
+        this.saveUsersToFile();
         System.out.printf("User with ID %s deleted.\n", id);
-    }
-
-    public List<User> listUsers() {
-        return this.users;
     }
 }
